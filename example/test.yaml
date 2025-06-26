@@ -1,0 +1,74 @@
+openapi: 3.0.0
+info:
+  contact:
+    email: socketwang@tencent.com
+    name: socketwang，需修改
+    url: http://ds.deltaverse.woa.com
+  description: 服务描述，需修改
+  title: 服务定义，需修改
+  version: "1.0"
+paths:
+  /llm-assistant/v1/meta/table:
+    post:
+      description: 获取数据库表的元数据信息
+      operationId: GetTableMetaInfo
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/GetTableMetaInfoRequest"
+        description: GetTableMetaInfoRequest
+        required: true
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TableMetaInfoResponse"
+      tags:
+        - LLM-Assistant
+servers:
+  - url: http://localhost:8080/bllm-assistant
+components:
+  schemas:
+    ColumnMetaInfo:
+      properties:
+        column_name:
+          type: string
+        column_type:
+          type: string
+      type: object
+    GetTableMetaInfoRequest:
+      properties:
+        datasource_id:
+          description: 数据源id
+          type: string
+        model_type:
+          description: 分析模型，EVENT：事件分析，MULTIDIM：多维分析
+          type: string
+        pid:
+          description: 业务id
+          type: string
+        tables:
+          description: 待查询的表列表信息
+          items:
+            type: string
+          type: array
+      type: object
+    TableMetaInfo:
+      properties:
+        columns:
+          items:
+            $ref: "#/components/schemas/ColumnMetaInfo"
+          type: array
+        table_name:
+          type: string
+      type: object
+    TableMetaInfoResponse:
+      properties:
+        tables:
+          items:
+            $ref: "#/components/schemas/TableMetaInfo"
+          type: array
+      type: object

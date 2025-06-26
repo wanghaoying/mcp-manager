@@ -1,0 +1,12 @@
+global:
+
+
+net:
+  addr: :8080
+  pprof: :8081
+  metrics: :8082
+
+
+log:
+  level: debug
+  path: ../log/log_%Y%m%d.log
