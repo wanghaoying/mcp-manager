@@ -23,7 +23,7 @@ import (
 )
 
 var (
-	cfg = pflag.StringP("cfg", "c", "../cfg/cfg.yaml", "config file path.")
+	cfg = pflag.StringP("cfg", "c", "./cfg/cfg.yaml", "config file path.")
 )
 
 func onCfgChg(e fsnotify.Event) {

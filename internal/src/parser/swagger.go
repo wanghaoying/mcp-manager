@@ -47,6 +47,19 @@ func (p *DefaultSwaggerParser) Parse(path string) (*openapi3.T, error) {
 	return doc, nil
 }
 
+// ParseFromData 通过字节数据解析 Swagger 文档
+func (p *DefaultSwaggerParser) ParseFromData(data []byte) (*openapi3.T, error) {
+	loader := openapi3.NewLoader()
+	doc, err := loader.LoadFromData(data)
+	if err != nil {
+		return nil, fmt.Errorf("failed to parse swagger data: %v", err)
+	}
+	if err := p.Validate(doc); err != nil {
+		return nil, err
+	}
+	return doc, nil
+}
+
 // Validate 验证 Swagger 文档
 func (p *DefaultSwaggerParser) Validate(doc *openapi3.T) error {
 	// 确保Components对象存在（处理空components情况）
