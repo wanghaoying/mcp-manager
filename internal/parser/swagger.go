@@ -6,14 +6,19 @@ import (
 	"io/ioutil"
 
 	"github.com/getkin/kin-openapi/openapi3"
+	"mcp-manager/internal/model" // 修改为实际的导入路径
 )
 
 // SwaggerParser 定义了 Swagger 解析器的接口
 type SwaggerParser interface {
 	// Parse 解析 Swagger 文档
 	Parse(path string) (*openapi3.T, error)
+	// ParseFromData 通过字节数据解析 Swagger 文档
+	ParseFromData(data []byte) (*openapi3.T, error)
 	// Validate 验证 Swagger 文档
 	Validate(doc *openapi3.T) error
+	// ExtractAPIEndpoints 从 openapi3.T 文档中提取所有 APIEndpoint
+	ExtractAPIEndpoints(doc interface{}) []model.APIEndpoint
 }
 
 // DefaultSwaggerParser 是 Swagger 解析器的默认实现
@@ -165,4 +170,25 @@ func (p *DefaultSwaggerParser) Validate(doc *openapi3.T) error {
 		doc.Paths = &openapi3.Paths{}
 	}
 	return nil
+}
+
+// ExtractAPIEndpoints 从 openapi3.T 文档中提取所有 APIEndpoint
+func (p *DefaultSwaggerParser) ExtractAPIEndpoints(doc interface{}) []model.APIEndpoint {
+	openapiDoc, ok := doc.(*openapi3.T)
+	if !ok || openapiDoc == nil {
+		return nil
+	}
+	var endpoints []model.APIEndpoint
+	for path, pathItem := range openapiDoc.Paths.Map() {
+		for method, operation := range pathItem.Operations() {
+			endpoints = append(endpoints, model.APIEndpoint{
+				Path:        path,
+				Method:      method,
+				Summary:     operation.Summary,
+				Description: operation.Description,
+				OperationID: operation.OperationID,
+			})
+		}
+	}
+	return endpoints
 }
