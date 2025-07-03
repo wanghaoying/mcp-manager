@@ -8,7 +8,7 @@ package main
 
 import (
 	"fmt"
-	"mcp-manager/internal/src/router"
+	"mcp-manager/internal/router"
 	"mcp-manager/pkg/config"
 	"mcp-manager/pkg/logger"
 	"net/http"

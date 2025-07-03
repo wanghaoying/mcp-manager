@@ -1,9 +1,8 @@
 package router
 
 import (
-	"mcp-manager/internal/src/controller"
-
 	"github.com/gin-gonic/gin"
+	"mcp-manager/internal/controller"
 )
 
 // RegisterSwaggerHandlers 注册swagger相关handler

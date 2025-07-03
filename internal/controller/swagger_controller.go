@@ -2,7 +2,7 @@ package controller
 
 import (
 	"io/ioutil"
-	"mcp-manager/internal/src/parser"
+	"mcp-manager/internal/parser"
 	"mcp-manager/pkg/common"
 	"mime/multipart"
 

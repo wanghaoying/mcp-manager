@@ -10,3 +10,24 @@ net:
 log:
   level: debug
   path: ../log/log_%Y%m%d.log
+
+
+dbs:
+  main:
+    user: root
+    password: 123456
+    addr: 127.0.0.1:3306
+    name: mydb
+    max_open_conn: 10
+    max_idle_conn: 5
+    debug_log: true
+    type: mysql
+  another:
+    user: user2
+    password: pwd2
+    addr: 127.0.0.1:3307
+    name: db2
+    max_open_conn: 5
+    max_idle_conn: 2
+    debug_log: false
+    type: mysql
