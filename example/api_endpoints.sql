@@ -6,6 +6,7 @@ CREATE TABLE IF NOT EXISTS `api_endpoints` (
   `method` VARCHAR(16) NOT NULL,
   `summary` VARCHAR(255) DEFAULT '',
   `description` TEXT DEFAULT NULL,
+  `operation_id` VARCHAR(128) DEFAULT '', -- 新增，唯一标识 operationId
   `tags` VARCHAR(255) DEFAULT '',
   `parameters` JSON DEFAULT NULL,
   `responses` JSON DEFAULT NULL,

@@ -21,8 +21,8 @@ type apiEndpointDAO struct {
 	db *gorm.DB
 }
 
-func NewAPIEndpointDAO(db *gorm.DB) APIEndpointDAO {
-	return &apiEndpointDAO{db: db}
+func NewAPIEndpointDAO() APIEndpointDAO {
+	return &apiEndpointDAO{}
 }
 
 func (d *apiEndpointDAO) Create(ctx context.Context, endpoint *model.APIEndpoint) error {

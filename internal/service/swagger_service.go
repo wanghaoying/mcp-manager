@@ -3,9 +3,13 @@ package service
 import (
 	"context"
 	"fmt"
+	"io"
 	"mcp-manager/internal/dao"
 	"mcp-manager/internal/model"
-	"mcp-manager/internal/parser"
+	http "mcp-manager/internal/utils/http"
+	"mcp-manager/internal/utils/parser"
+	"net/url"
+	"strings"
 )
 
 // SwaggerService 定义 swagger 解析与 APIEndpoint 管理的业务接口
@@ -22,6 +26,8 @@ type SwaggerService interface {
 	DeleteAPIEndpoint(ctx context.Context, id uint) error
 	// UpdateAPIEndpoint 更新指定的 APIEndpoint
 	UpdateAPIEndpoint(ctx context.Context, endpoint *model.APIEndpoint) error
+	// TestAPIEndpoint 测试指定 APIEndpoint，返回响应内容
+	TestAPIEndpoint(ctx context.Context, endpoint *model.APIEndpoint, baseURL string) (string, error)
 }
 
 // --- 新增：SwaggerParserWithExtract 接口，扩展 ExtractAPIEndpoints 能力 ---
@@ -31,12 +37,22 @@ type SwaggerParserWithExtract interface {
 }
 
 type swaggerService struct {
-	parser parser.SwaggerParser
-	dao    dao.APIEndpointDAO
+	parser     parser.SwaggerParser
+	dao        dao.APIEndpointDAO
+	httpClient http.HTTPClient
 }
 
-func NewSwaggerService(parser parser.SwaggerParser, dao dao.APIEndpointDAO) SwaggerService {
-	return &swaggerService{parser: parser, dao: dao}
+//
+//func NewSwaggerService(parser parser.SwaggerParser, dao dao.APIEndpointDAO, httpClient utils.HTTPClient) SwaggerService {
+//	return &swaggerService{parser: parser, dao: dao, httpClient: httpClient}
+//}
+
+func NewSwaggerService() SwaggerService {
+	return &swaggerService{
+		parser:     parser.NewSwaggerParser(),
+		dao:        dao.NewAPIEndpointDAO(),
+		httpClient: http.NewHTTPClient(),
+	}
 }
 
 // ParseAndSave 解析 swagger 内容并保存所有接口到数据库
@@ -79,4 +95,61 @@ func (s *swaggerService) UpdateAPIEndpoint(ctx context.Context, endpoint *model.
 	return s.dao.Update(ctx, endpoint)
 }
 
-// --- mock 实现已移除，如需 mock 请在 mock_swagger_service.go 中实现 ---
+func (s *swaggerService) TestAPIEndpoint(ctx context.Context, endpoint *model.APIEndpoint, baseURL string) (string, error) {
+	// 1. 处理 path 参数
+	accURL := baseURL + endpoint.Path
+	for _, param := range endpoint.Parameters {
+		if param.In == "path" {
+			if param.Value == "" && param.Required {
+				return "", fmt.Errorf("missing required path parameter: %s", param.Name)
+			}
+			accURL = strings.ReplaceAll(accURL, "{"+param.Name+"}", param.Value)
+		}
+	}
+
+	// 2. 处理 query 参数
+	query := url.Values{}
+	for _, param := range endpoint.Parameters {
+		if param.In == "query" && param.Value != "" {
+			query.Add(param.Name, param.Value)
+		}
+	}
+	if len(query) > 0 {
+		accURL += "?" + query.Encode()
+	}
+
+	// 3. 处理 header
+	headers := make(map[string]string)
+	for _, param := range endpoint.Parameters {
+		if param.In == "header" && param.Value != "" {
+			headers[param.Name] = param.Value
+		}
+	}
+	for k, v := range endpoint.Headers {
+		headers[k] = v
+	}
+
+	// 4. 处理 body（支持 application/json）
+	var bodyReader io.Reader
+	if endpoint.Method == "POST" || endpoint.Method == "PUT" || endpoint.Method == "PATCH" {
+		var bodyStr string
+		for _, param := range endpoint.Parameters {
+			if param.In == "body" {
+				if param.Value == "" && param.Required {
+					return "", fmt.Errorf("missing required body parameter: %s", param.Name)
+				}
+				bodyStr = param.Value
+				break
+			}
+		}
+		if bodyStr == "" && endpoint.Body != "" {
+			bodyStr = endpoint.Body
+		}
+		if bodyStr != "" {
+			bodyReader = strings.NewReader(bodyStr)
+		}
+	}
+
+	// 5. 发起请求
+	return s.httpClient.DoRequest(ctx, endpoint.Method, accURL, bodyReader)
+}
