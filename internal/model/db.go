@@ -1,6 +1,8 @@
 package model
 
 import (
+	"fmt"
+	"gorm.io/gorm"
 	"mcp-manager/pkg/config"
 	"mcp-manager/pkg/db"
 )
@@ -39,25 +41,25 @@ func DBConfigFromMap(m map[string]interface{}) db.Config {
 	return cfg
 }
 
-// InitAllDBs 初始化所有数据库连接
-func InitAllDBs() (map[string]db.DBManager, error) {
+// InitDBs 初始化所有数据库连接
+func InitDBs() error {
 	all := config.DBConfigs()
-	result := make(map[string]db.DBManager)
 	for name, m := range all {
 		cfg := DBConfigFromMap(m)
 		manager, err := db.DBFactory(cfg)
 		if err != nil {
-			return nil, err
+			return err
 		}
-		result[name] = manager
 		db.RegisterDBManager(name, manager)
 	}
-	return result, nil
+	return nil
 }
 
-// InitDBByName 初始化指定名称的数据库连接
-func InitDBByName(name string) (db.DBManager, error) {
-	m := config.DBConfig(name)
-	cfg := DBConfigFromMap(m)
-	return db.DBFactory(cfg)
+// GetMainDB retrieves the main database connection
+func GetMainDB() (*gorm.DB, error) {
+	manager, ok := db.GetDBManagerByName("main")
+	if !ok {
+		return nil, fmt.Errorf("main database manager not found")
+	}
+	return manager.Connect()
 }

@@ -6,10 +6,12 @@ CREATE TABLE IF NOT EXISTS `api_endpoints` (
   `method` VARCHAR(16) NOT NULL,
   `summary` VARCHAR(255) DEFAULT '',
   `description` TEXT DEFAULT NULL,
-  `operation_id` VARCHAR(128) DEFAULT '', -- 新增，唯一标识 operationId
+  `operation_id` VARCHAR(64) DEFAULT '', -- 长度调整为64，唯一标识 operationId
   `tags` VARCHAR(255) DEFAULT '',
   `parameters` JSON DEFAULT NULL,
   `responses` JSON DEFAULT NULL,
+  `headers` JSON DEFAULT NULL, -- 新增
+  `body` TEXT DEFAULT NULL,    -- 新增
   `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
   `updated_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`),

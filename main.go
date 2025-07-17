@@ -8,6 +8,7 @@ package main
 
 import (
 	"fmt"
+	"mcp-manager/internal/model"
 	"mcp-manager/internal/router"
 	"mcp-manager/pkg/config"
 	"mcp-manager/pkg/logger"
@@ -48,6 +49,13 @@ func init() {
 	if err != nil {
 		fmt.Println("init debug logger failed!")
 		os.Exit(-3)
+	}
+
+	// init db
+	err = model.InitDBs()
+	if err != nil {
+		log.Errorf("init db failed: %v", err)
+		os.Exit(-4)
 	}
 }
 

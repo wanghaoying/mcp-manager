@@ -68,7 +68,7 @@ func DBFactory(config Config) (DBManager, error) {
 	}
 }
 
-var dbManagerMap sync.Map
+var dbManagerMap sync.Map = sync.Map{}
 
 // RegisterDBManager 注册 dbName 与 DBManager 的映射（线程安全，使用 sync.Map）
 func RegisterDBManager(dbName string, manager DBManager) {

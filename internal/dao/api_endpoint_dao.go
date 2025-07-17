@@ -22,7 +22,11 @@ type apiEndpointDAO struct {
 }
 
 func NewAPIEndpointDAO() APIEndpointDAO {
-	return &apiEndpointDAO{}
+	db, err := model.GetMainDB() // 获取主数据库连接
+	if err != nil {
+		panic("failed to get main DB: " + err.Error())
+	}
+	return &apiEndpointDAO{db: db}
 }
 
 func (d *apiEndpointDAO) Create(ctx context.Context, endpoint *model.APIEndpoint) error {

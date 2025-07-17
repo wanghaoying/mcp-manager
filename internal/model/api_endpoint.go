@@ -1,35 +1,87 @@
 package model
 
 import (
+	"database/sql/driver"
+	"encoding/json"
+	"fmt"
 	"time"
 )
 
-// APIEndpoint 表示 swagger 解析出的接口信息
-// 对应数据库表 api_endpoints
-// 参数和响应字段建议用 JSON 存储
-// 你可以在 example/api_endpoints.sql 找到对应的 MySQL 建表语句
+// APIEndpoint represents an API endpoint in the system.
 type APIEndpoint struct {
-	ID          uint              `gorm:"primaryKey" json:"id"`
-	SwaggerID   uint              `json:"swagger_id"` // 可选，关联 swagger 文档
-	Path        string            `json:"path"`
-	Method      string            `json:"method"`
-	Summary     string            `json:"summary"`
-	Description string            `json:"description"`
-	OperationID string            `json:"operation_id"` // 新增，唯一标识 operationId
-	Tags        string            `json:"tags"`         // 多标签用逗号分隔或 json
-	Parameters  []APIParameter    `json:"parameters"`   // 建议存 json
-	Responses   string            `json:"responses"`    // 建议存 json
-	Headers     map[string]string `json:"headers"`      // 新增，接口自定义 header
-	Body        string            `json:"body"`         // 新增，接口自定义 body 内容
-	CreatedAt   time.Time         `json:"created_at"`
-	UpdatedAt   time.Time         `json:"updated_at"`
+	ID          uint          `gorm:"primaryKey;column:id" json:"id"`                           // Unique identifier for the endpoint
+	SwaggerID   uint          `gorm:"column:swagger_id" json:"swagger_id"`                      // ID from the Swagger/OpenAPI specification
+	Path        string        `gorm:"column:path;type:varchar(255)" json:"path"`                // URL path of the endpoint
+	Method      string        `gorm:"column:method;type:varchar(16)" json:"method"`             // HTTP method (GET, POST, etc.)
+	Summary     string        `gorm:"column:summary;type:varchar(255)" json:"summary"`          // Brief summary of the endpoint
+	Description string        `gorm:"column:description;type:text" json:"description"`          // Detailed description of the endpoint
+	OperationID string        `gorm:"column:operation_id;type:varchar(64)" json:"operation_id"` // Unique operation ID
+	Tags        string        `gorm:"column:tags;type:varchar(255)" json:"tags"`                // Tags associated with the endpoint
+	Parameters  APIParameters `gorm:"type:json;column:parameters" json:"parameters"`            // List of parameters for the endpoint
+	Responses   string        `gorm:"column:responses;type:json" json:"responses"`              // Responses returned by the endpoint
+	Headers     StringMap     `gorm:"type:json;column:headers" json:"headers"`                  // Headers associated with the endpoint
+	Body        string        `gorm:"column:body;type:text" json:"body"`                        // Request body for the endpoint
+	CreatedAt   time.Time     `gorm:"column:created_at;autoCreateTime" json:"created_at"`       // Timestamp when the endpoint was created
+	UpdatedAt   time.Time     `gorm:"column:updated_at;autoUpdateTime" json:"updated_at"`       // Timestamp when the endpoint was last updated
 }
 
-// APIParameter 表示单个参数
+// APIParameter represents a single parameter in an API endpoint.
 type APIParameter struct {
-	Name     string `json:"name"`
-	In       string `json:"in"` // path, query, header, body
-	Required bool   `json:"required"`
-	Type     string `json:"type"`
-	Value    string `json:"value"` // 测试时传入的值
+	Name     string `json:"name"`     // Name of the parameter
+	In       string `json:"in"`       // Location of the parameter (e.g., query, path, header)
+	Required bool   `json:"required"` // Whether the parameter is required
+	Type     string `json:"type"`     // Data type of the parameter
+	Value    string `json:"value"`    // Default value of the parameter
+}
+
+// APIParameters is a slice of APIParameter.
+type APIParameters []APIParameter
+
+// Value converts APIParameters to a database-compatible format.
+func (a APIParameters) Value() (driver.Value, error) {
+	b, err := json.Marshal(a)
+	if err != nil {
+		return nil, err
+	}
+	return string(b), nil
+}
+
+// Scan converts a database value back to APIParameters.
+func (a *APIParameters) Scan(value interface{}) error {
+	var bytes []byte
+	switch v := value.(type) {
+	case string:
+		bytes = []byte(v)
+	case []byte:
+		bytes = v
+	default:
+		return fmt.Errorf("unsupported type: %T", value)
+	}
+	return json.Unmarshal(bytes, a)
+}
+
+// StringMap is a map of string key-value pairs.
+type StringMap map[string]string
+
+// Value converts StringMap to a database-compatible format.
+func (m StringMap) Value() (driver.Value, error) {
+	b, err := json.Marshal(m)
+	if err != nil {
+		return nil, err
+	}
+	return string(b), nil
+}
+
+// Scan converts a database value back to StringMap.
+func (m *StringMap) Scan(value interface{}) error {
+	var bytes []byte
+	switch v := value.(type) {
+	case string:
+		bytes = []byte(v)
+	case []byte:
+		bytes = v
+	default:
+		return fmt.Errorf("unsupported type: %T", value)
+	}
+	return json.Unmarshal(bytes, m)
 }
