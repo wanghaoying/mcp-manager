@@ -50,7 +50,7 @@ type swaggerService struct {
 func NewSwaggerService() SwaggerService {
 	return &swaggerService{
 		parser:     parser.NewSwaggerParser(),
-		dao:        dao.NewAPIEndpointDAO(),
+		dao:        dao.NewAPIEndpointDAO(nil),
 		httpClient: http.NewHTTPClient(),
 	}
 }

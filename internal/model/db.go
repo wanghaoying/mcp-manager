@@ -55,9 +55,9 @@ func InitDBs() error {
 	return nil
 }
 
-// GetMainDB retrieves the main database connection
-func GetMainDB() (*gorm.DB, error) {
-	manager, ok := db.GetDBManagerByName("main")
+// GetMcpManagerDB retrieves the mcp-manager database connection
+func GetMcpManagerDB() (*gorm.DB, error) {
+	manager, ok := db.GetDBManagerByName("mcp_manager")
 	if !ok {
 		return nil, fmt.Errorf("main database manager not found")
 	}

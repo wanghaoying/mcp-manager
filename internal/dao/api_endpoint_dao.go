@@ -2,8 +2,9 @@ package dao
 
 import (
 	"context"
-	"gorm.io/gorm"
 	"mcp-manager/internal/model"
+
+	"gorm.io/gorm"
 )
 
 // APIEndpointDAO 定义对 api_endpoints 表的基本操作
@@ -21,10 +22,13 @@ type apiEndpointDAO struct {
 	db *gorm.DB
 }
 
-func NewAPIEndpointDAO() APIEndpointDAO {
-	db, err := model.GetMainDB() // 获取主数据库连接
-	if err != nil {
-		panic("failed to get main DB: " + err.Error())
+func NewAPIEndpointDAO(db *gorm.DB) APIEndpointDAO {
+	if db == nil {
+		var err error
+		db, err = model.GetMcpManagerDB() // 获取主数据库连接
+		if err != nil {
+			panic("failed to get main DB: " + err.Error())
+		}
 	}
 	return &apiEndpointDAO{db: db}
 }
