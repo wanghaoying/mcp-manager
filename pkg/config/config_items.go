@@ -9,7 +9,7 @@ func LogLevel() string {
 
 // Addr gets server address
 func Addr() string {
-	return viper.GetString("net.addr")
+	return viper.GetString("global.net.addr")
 }
 
 // LogPath gets log path

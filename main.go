@@ -21,6 +21,7 @@ import (
 	"github.com/gin-gonic/gin"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/pflag"
+	_ "mcp-manager/docs"
 )
 
 var (

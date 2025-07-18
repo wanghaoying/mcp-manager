@@ -1,0 +1,477 @@
+{
+    "swagger": "2.0",
+    "info": {
+        "description": "MCP Manager Application Entry Point",
+        "title": "main.go",
+        "contact": {}
+    },
+    "paths": {
+        "/api/swagger/endpoint": {
+            "put": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Swagger"
+                ],
+                "summary": "更新APIEndpoint",
+                "parameters": [
+                    {
+                        "description": "APIEndpoint数据",
+                        "name": "data",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/model.APIEndpoint"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/model.APIEndpoint"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/swagger/endpoint/test": {
+            "post": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Swagger"
+                ],
+                "summary": "测试APIEndpoint",
+                "parameters": [
+                    {
+                        "description": "APIEndpoint数据",
+                        "name": "data",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/model.APIEndpoint"
+                        }
+                    },
+                    {
+                        "type": "string",
+                        "description": "服务器基础URL",
+                        "name": "base_url",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/swagger/endpoint/{id}": {
+            "get": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Swagger"
+                ],
+                "summary": "根据ID查询APIEndpoint",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "APIEndpoint ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/model.APIEndpoint"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Swagger"
+                ],
+                "summary": "删除指定APIEndpoint",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "APIEndpoint ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/swagger/endpoints": {
+            "get": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Swagger"
+                ],
+                "summary": "查询指定swaggerID下所有APIEndpoint",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "SwaggerID",
+                        "name": "swagger_id",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/model.APIEndpoint"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/swagger/parse": {
+            "post": {
+                "description": "上传Swagger内容并保存所有接口到数据库",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Swagger"
+                ],
+                "summary": "解析并保存Swagger接口",
+                "parameters": [
+                    {
+                        "description": "Swagger内容",
+                        "name": "data",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/controller.SwaggerTextRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/model.APIEndpoint"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/swagger/validate/file": {
+            "post": {
+                "description": "上传Swagger文件并进行格式和内容校验",
+                "consumes": [
+                    "multipart/form-data"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Swagger"
+                ],
+                "summary": "通过文件上传校验Swagger文档",
+                "parameters": [
+                    {
+                        "type": "file",
+                        "description": "Swagger文件",
+                        "name": "file",
+                        "in": "formData",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/swagger/validate/text": {
+            "post": {
+                "description": "粘贴Swagger内容并进行格式和内容校验",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Swagger"
+                ],
+                "summary": "通过文本内容校验Swagger文档",
+                "parameters": [
+                    {
+                        "description": "Swagger内容",
+                        "name": "data",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/controller.SwaggerTextRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    },
+    "definitions": {
+        "controller.SwaggerTextRequest": {
+            "type": "object",
+            "required": [
+                "content"
+            ],
+            "properties": {
+                "content": {
+                    "description": "粘贴的Swagger内容字符串，必须为有效的OpenAPI内容",
+                    "type": "string"
+                }
+            }
+        },
+        "model.APIEndpoint": {
+            "type": "object",
+            "properties": {
+                "body": {
+                    "description": "Request body for the endpoint",
+                    "type": "string"
+                },
+                "created_at": {
+                    "description": "Timestamp when the endpoint was created",
+                    "type": "string"
+                },
+                "description": {
+                    "description": "Detailed description of the endpoint",
+                    "type": "string"
+                },
+                "headers": {
+                    "description": "Headers associated with the endpoint",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/model.StringMap"
+                        }
+                    ]
+                },
+                "id": {
+                    "description": "Unique identifier for the endpoint",
+                    "type": "integer"
+                },
+                "method": {
+                    "description": "HTTP method (GET, POST, etc.)",
+                    "type": "string"
+                },
+                "operation_id": {
+                    "description": "Unique operation ID",
+                    "type": "string"
+                },
+                "parameters": {
+                    "description": "List of parameters for the endpoint",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/model.APIParameter"
+                    }
+                },
+                "path": {
+                    "description": "URL path of the endpoint",
+                    "type": "string"
+                },
+                "responses": {
+                    "description": "Responses returned by the endpoint",
+                    "type": "string"
+                },
+                "summary": {
+                    "description": "Brief summary of the endpoint",
+                    "type": "string"
+                },
+                "swagger_id": {
+                    "description": "ID from the Swagger/OpenAPI specification",
+                    "type": "integer"
+                },
+                "tags": {
+                    "description": "Tags associated with the endpoint",
+                    "type": "string"
+                },
+                "updated_at": {
+                    "description": "Timestamp when the endpoint was last updated",
+                    "type": "string"
+                }
+            }
+        },
+        "model.APIParameter": {
+            "type": "object",
+            "properties": {
+                "in": {
+                    "description": "Location of the parameter (e.g., query, path, header)",
+                    "type": "string"
+                },
+                "name": {
+                    "description": "Name of the parameter",
+                    "type": "string"
+                },
+                "required": {
+                    "description": "Whether the parameter is required",
+                    "type": "boolean"
+                },
+                "type": {
+                    "description": "Data type of the parameter",
+                    "type": "string"
+                },
+                "value": {
+                    "description": "Default value of the parameter",
+                    "type": "string"
+                }
+            }
+        },
+        "model.StringMap": {
+            "type": "object",
+            "additionalProperties": {
+                "type": "string"
+            }
+        }
+    }
+}
