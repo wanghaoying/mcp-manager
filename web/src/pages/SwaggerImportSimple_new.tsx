@@ -1,6 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import {
   Card,
+  Upload,
   Button,
   Textarea,
   Space,
@@ -15,35 +16,12 @@ import { swaggerService } from '../services/swagger';
 
 const { Group: RadioGroup } = Radio;
 
-const SwaggerImportSimple: React.FC = () => {
+const SwaggerImport: React.FC = () => {
   const [importType, setImportType] = useState<'file' | 'text'>('file');
   const [swaggerContent, setSwaggerContent] = useState('');
   const [loading, setLoading] = useState(false);
   const [validationResult, setValidationResult] = useState<any>(null);
   const [parseResult, setParseResult] = useState<any>(null);
-  const [isDragOver, setIsDragOver] = useState(false);
-
-  // 阻止页面拖拽默认行为
-  useEffect(() => {
-    const preventDefaultDrag = (e: DragEvent) => {
-      // 阻止在页面其他地方拖拽文件时打开新页面
-      e.preventDefault();
-    };
-
-    const preventDefaultDrop = (e: DragEvent) => {
-      e.preventDefault();
-    };
-
-    // 添加全局拖拽事件监听器
-    document.addEventListener('dragover', preventDefaultDrag);
-    document.addEventListener('drop', preventDefaultDrop);
-
-    // 清理事件监听器
-    return () => {
-      document.removeEventListener('dragover', preventDefaultDrag);
-      document.removeEventListener('drop', preventDefaultDrop);
-    };
-  }, []);
 
   // 文件上传处理 - 真正调用后台API
   const handleFileUpload = async (files: File[]) => {
@@ -192,66 +170,54 @@ const SwaggerImportSimple: React.FC = () => {
               <div style={{ marginBottom: 16 }}>
                 <strong>上传Swagger文档文件：</strong>
               </div>
-              
-              {/* 自定义拖拽上传区域 */}
-              <div
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  height: 120,
-                  border: `2px dashed ${isDragOver ? '#0052d9' : '#d9d9d9'}`,
-                  borderRadius: 6,
-                  cursor: loading ? 'not-allowed' : 'pointer',
-                  opacity: loading ? 0.6 : 1,
-                  backgroundColor: isDragOver ? '#f0f8ff' : 'transparent',
-                  transition: 'all 0.3s ease'
-                }}
-                onDragOver={(e) => {
-                  e.preventDefault();
-                  e.stopPropagation();
-                  setIsDragOver(true);
-                }}
-                onDragLeave={(e) => {
-                  e.preventDefault();
-                  e.stopPropagation();
-                  setIsDragOver(false);
-                }}
-                onDrop={(e) => {
-                  e.preventDefault();
-                  e.stopPropagation();
-                  setIsDragOver(false);
-                  
-                  const files = e.dataTransfer?.files;
+              <Upload
+                action=""
+                accept=".json,.yaml,.yml"
+                multiple={false}
+                disabled={loading}
+                beforeUpload={() => false}
+                onChange={(files) => {
+                  console.log('Upload onChange triggered:', files);
                   if (files && files.length > 0) {
-                    const fileArray = Array.from(files);
+                    // TDesign Upload 组件在不同模式下传入的参数不同
+                    // 这里我们需要适配不同的情况
+                    let fileArray: File[] = [];
+                    if (Array.isArray(files)) {
+                      fileArray = files as File[];
+                    } else if (files instanceof FileList) {
+                      fileArray = Array.from(files);
+                    } else {
+                      fileArray = [files as File];
+                    }
                     handleFileUpload(fileArray);
                   }
                 }}
-                onClick={() => {
-                  // 创建隐藏的文件输入框来选择文件
-                  const input = document.createElement('input');
-                  input.type = 'file';
-                  input.accept = '.json,.yaml,.yml';
-                  input.multiple = false;
-                  input.onchange = (e) => {
-                    const target = e.target as HTMLInputElement;
-                    if (target.files && target.files.length > 0) {
-                      const fileArray = Array.from(target.files);
-                      handleFileUpload(fileArray);
-                    }
-                  };
-                  input.click();
+                onRemove={() => {
+                  // 清空结果
+                  setValidationResult(null);
+                  setParseResult(null);
                 }}
+                theme="file-flow"
+                tips="支持.json、.yaml、.yml格式"
+                placeholder="点击或拖拽文件到此区域上传"
               >
-                <Space direction="vertical" align="center">
-                  <CloudUploadIcon size="48" style={{ color: isDragOver ? '#0052d9' : '#666' }} />
-                  <span style={{ color: isDragOver ? '#0052d9' : '#333' }}>
-                    {isDragOver ? '松开鼠标上传文件' : '点击或拖拽文件到此区域上传'}
-                  </span>
-                  <span style={{ color: '#999', fontSize: '12px' }}>支持 .json、.yaml、.yml 格式</span>
-                </Space>
-              </div>
+                <div style={{ 
+                  display: 'flex', 
+                  alignItems: 'center', 
+                  justifyContent: 'center', 
+                  height: 120,
+                  border: '2px dashed #d9d9d9',
+                  borderRadius: 6,
+                  cursor: loading ? 'not-allowed' : 'pointer',
+                  opacity: loading ? 0.6 : 1
+                }}>
+                  <Space direction="vertical" align="center">
+                    <CloudUploadIcon size="48" style={{ color: '#0052d9' }} />
+                    <span>点击或拖拽文件到此区域上传</span>
+                    <span style={{ color: '#999', fontSize: '12px' }}>支持 .json、.yaml、.yml 格式</span>
+                  </Space>
+                </div>
+              </Upload>
             </div>
           )}
 
@@ -340,4 +306,4 @@ const SwaggerImportSimple: React.FC = () => {
   );
 };
 
-export default SwaggerImportSimple;
+export default SwaggerImport;

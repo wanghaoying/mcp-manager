@@ -1,7 +1,9 @@
-import React from 'react';
-import { Card, Table, Button, Space, Tag, MessagePlugin } from 'tdesign-react';
+import React, { useState, useEffect } from 'react';
+import { Card, Table, Button, Space, Tag, MessagePlugin, Loading } from 'tdesign-react';
+import { swaggerService } from '../services/swagger';
+import type { APIEndpoint } from '../types/swagger';
 
-// 模拟数据
+// 模拟数据作为后备
 const mockEndpoints = [
   {
     id: 1,
@@ -38,16 +40,59 @@ const mockEndpoints = [
 ];
 
 const EndpointManagement: React.FC = () => {
-  const handleEdit = (record: any) => {
+  const [endpoints, setEndpoints] = useState<APIEndpoint[]>([]);
+  const [loading, setLoading] = useState(false);
+
+  // 加载接口数据
+  const loadEndpoints = async () => {
+    setLoading(true);
+    try {
+      // 这里使用swagger_id = 0，因为从测试看到后台使用的是0
+      const data = await swaggerService.getEndpoints(0);
+      setEndpoints(data);
+    } catch (error: any) {
+      console.error('加载接口数据失败:', error);
+      MessagePlugin.error(error.message || '加载接口数据失败');
+      // 如果加载失败，显示模拟数据
+      setEndpoints(mockEndpoints as APIEndpoint[]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    loadEndpoints();
+  }, []);
+
+  const handleEdit = (record: APIEndpoint) => {
     MessagePlugin.info(`编辑接口: ${record.summary}`);
   };
 
-  const handleDelete = (record: any) => {
-    MessagePlugin.warning(`删除接口: ${record.summary}`);
+  const handleDelete = async (record: APIEndpoint) => {
+    try {
+      await swaggerService.deleteEndpoint(record.id);
+      MessagePlugin.success(`删除接口成功: ${record.summary}`);
+      // 重新加载数据
+      loadEndpoints();
+    } catch (error: any) {
+      MessagePlugin.error(error.message || '删除接口失败');
+    }
   };
 
-  const handleTest = (record: any) => {
-    MessagePlugin.success(`测试接口: ${record.method} ${record.path}`);
+  const handleTest = async (record: APIEndpoint) => {
+    try {
+      MessagePlugin.info(`正在测试接口: ${record.method} ${record.path}...`);
+      // 这里需要一个基础URL，实际应用中应该从配置获取
+      const result = await swaggerService.testEndpoint(record, 'http://localhost:8080');
+      MessagePlugin.success(`接口测试成功`);
+      console.log('测试结果:', result);
+    } catch (error: any) {
+      MessagePlugin.error(error.message || '接口测试失败');
+    }
+  };
+
+  const handleRefresh = () => {
+    loadEndpoints();
   };
 
   const columns = [
@@ -136,24 +181,26 @@ const EndpointManagement: React.FC = () => {
   return (
     <div>
       <Card title="API接口管理">
+        {loading && <Loading loading={true} text="加载中..." />}
+        
         <div style={{ marginBottom: 16 }}>
           <Space>
             <Tag theme="primary" variant="light">
-              共 {mockEndpoints.length} 个接口
+              共 {endpoints.length} 个接口
             </Tag>
-            <Button theme="primary" variant="outline">
+            <Button theme="primary" variant="outline" onClick={handleRefresh} loading={loading}>
               刷新
             </Button>
           </Space>
         </div>
         
         <Table
-          data={mockEndpoints}
+          data={endpoints}
           columns={columns}
           pagination={{
             current: 1,
             pageSize: 10,
-            total: mockEndpoints.length,
+            total: endpoints.length,
             showJumper: true
           }}
           rowKey="id"

@@ -3,21 +3,20 @@ import {
   Card,
   Upload,
   Button,
-  TextArea,
+  Textarea,
   Space,
   Divider,
   Radio,
-  Message,
+  MessagePlugin,
   Loading,
   Tag,
-  List,
   Dialog
 } from 'tdesign-react';
 import { CloudUploadIcon, CheckCircleFilledIcon, ErrorCircleFilledIcon } from 'tdesign-icons-react';
 import { swaggerService } from '../services/swagger';
-import type { SwaggerValidationResult, SwaggerParseResult } from '../types/swagger';
+import type { SwaggerValidationResult, SwaggerParseResult, APIEndpoint } from '../types/swagger';
 
-const { RadioGroup } = Radio;
+const { Group: RadioGroup } = Radio;
 
 const SwaggerImport: React.FC = () => {
   const [importType, setImportType] = useState<'file' | 'text'>('file');
@@ -32,6 +31,7 @@ const SwaggerImport: React.FC = () => {
     if (files.length === 0) return;
     
     const file = files[0];
+    console.log('Uploading file:', file.name, file.type);
     setLoading(true);
     
     try {
@@ -39,22 +39,40 @@ const SwaggerImport: React.FC = () => {
       setValidationResult(result);
       
       if (result.valid) {
-        Message.success('文件校验成功！');
+        MessagePlugin.success('文件校验成功！');
       } else {
-        Message.error('文件校验失败：' + result.message);
+        MessagePlugin.error('文件校验失败：' + result.message);
       }
     } catch (error) {
-      Message.error('文件上传失败');
-      console.error(error);
+      MessagePlugin.error('文件上传失败');
+      console.error('Upload error:', error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  // 处理Upload组件的change事件
+  const handleUploadChange = async (context: any) => {
+    console.log('Upload change event:', context);
+    
+    // TDesign Upload组件的files是一个文件数组
+    if (context.files && context.files.length > 0) {
+      const file = context.files[0];
+      
+      // 确保这是一个真正的File对象
+      if (file instanceof File) {
+        await handleFileUpload([file]);
+      } else if (file.raw && file.raw instanceof File) {
+        // 有时候文件被包装在一个对象中
+        await handleFileUpload([file.raw]);
+      }
     }
   };
 
   // 文本内容校验
   const handleTextValidation = async () => {
     if (!swaggerContent.trim()) {
-      Message.warning('请输入Swagger文档内容');
+      MessagePlugin.warning('请输入Swagger文档内容');
       return;
     }
 
@@ -64,12 +82,12 @@ const SwaggerImport: React.FC = () => {
       setValidationResult(result);
       
       if (result.valid) {
-        Message.success('内容校验成功！');
+        MessagePlugin.success('内容校验成功！');
       } else {
-        Message.error('内容校验失败：' + result.message);
+        MessagePlugin.error('内容校验失败：' + result.message);
       }
     } catch (error) {
-      Message.error('校验失败');
+      MessagePlugin.error('校验失败');
       console.error(error);
     } finally {
       setLoading(false);
@@ -79,13 +97,13 @@ const SwaggerImport: React.FC = () => {
   // 解析并保存API接口
   const handleParseAndSave = async () => {
     if (!validationResult?.valid) {
-      Message.warning('请先完成文档校验');
+      MessagePlugin.warning('请先完成文档校验');
       return;
     }
 
     const content = importType === 'text' ? swaggerContent : validationResult.content;
     if (!content) {
-      Message.warning('没有可解析的内容');
+      MessagePlugin.warning('没有可解析的内容');
       return;
     }
 
@@ -93,9 +111,9 @@ const SwaggerImport: React.FC = () => {
     try {
       const result = await swaggerService.parseAndSave(content);
       setParseResult(result);
-      Message.success(`解析成功！共发现 ${result.endpoints.length} 个API接口`);
+      MessagePlugin.success(`解析成功！共发现 ${result.endpoints.length} 个API接口`);
     } catch (error) {
-      Message.error('解析失败');
+      MessagePlugin.error('解析失败');
       console.error(error);
     } finally {
       setLoading(false);
@@ -136,11 +154,11 @@ const SwaggerImport: React.FC = () => {
 
           {validationResult.valid && (
             <Space>
-              <Button type="primary" onClick={handleParseAndSave} loading={loading}>
+              <Button theme="primary" onClick={handleParseAndSave} loading={loading}>
                 解析并保存到数据库
               </Button>
               {parseResult && (
-                <Button theme="default" onClick={handlePreview}>
+                <Button variant="base" onClick={handlePreview}>
                   预览API接口 ({parseResult.endpoints.length})
                 </Button>
               )}
@@ -162,7 +180,7 @@ const SwaggerImport: React.FC = () => {
             </div>
             <RadioGroup
               value={importType}
-              onChange={setImportType}
+              onChange={(value) => setImportType(value as 'file' | 'text')}
               options={[
                 { label: '文件上传', value: 'file' },
                 { label: '文本粘贴', value: 'text' }
@@ -182,8 +200,7 @@ const SwaggerImport: React.FC = () => {
                 action=""
                 accept=".json,.yaml,.yml"
                 multiple={false}
-                beforeUpload={() => false}
-                onChange={({ files }) => handleFileUpload(files)}
+                onChange={handleUploadChange}
                 theme="file-flow"
                 placeholder="点击上传Swagger文档文件"
                 tips="支持.json、.yaml、.yml格式"
@@ -204,7 +221,7 @@ const SwaggerImport: React.FC = () => {
               <div style={{ marginBottom: 16 }}>
                 <strong>粘贴Swagger文档内容：</strong>
               </div>
-              <TextArea
+              <Textarea
                 placeholder="请粘贴完整的Swagger/OpenAPI文档内容（JSON或YAML格式）"
                 value={swaggerContent}
                 onChange={setSwaggerContent}
@@ -213,7 +230,7 @@ const SwaggerImport: React.FC = () => {
               />
               <div style={{ marginTop: 16 }}>
                 <Button 
-                  type="primary" 
+                  theme="primary" 
                   onClick={handleTextValidation}
                   loading={loading}
                   disabled={!swaggerContent.trim()}
@@ -245,43 +262,40 @@ const SwaggerImport: React.FC = () => {
                 共 {parseResult.endpoints.length} 个接口
               </Tag>
             </div>
-            <List
-              data={parseResult.endpoints}
-              renderItem={(item, index) => (
-                <List.ListItem key={index}>
-                  <div style={{ width: '100%' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', marginBottom: 8 }}>
-                      <Tag 
-                        theme={item.method === 'GET' ? 'success' : item.method === 'POST' ? 'primary' : 'warning'}
-                        style={{ marginRight: 8, minWidth: 60, textAlign: 'center' }}
-                      >
-                        {item.method}
-                      </Tag>
-                      <code style={{ background: '#f5f5f5', padding: '2px 8px', borderRadius: 4 }}>
-                        {item.path}
-                      </code>
-                    </div>
-                    <div>
-                      <strong>{item.summary || '未命名接口'}</strong>
-                    </div>
-                    {item.description && (
-                      <div style={{ color: '#666', fontSize: '14px', marginTop: 4 }}>
-                        {item.description}
-                      </div>
-                    )}
-                    {item.tags && (
-                      <div style={{ marginTop: 8 }}>
-                        {item.tags.split(',').map((tag, i) => (
-                          <Tag key={i} variant="outline" style={{ marginRight: 4 }}>
-                            {tag.trim()}
-                          </Tag>
-                        ))}
-                      </div>
-                    )}
+            <div>
+              {parseResult.endpoints.map((item: APIEndpoint, index: number) => (
+                <div key={index} style={{ marginBottom: 16, padding: 16, border: '1px solid #e7e7e7', borderRadius: 4 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', marginBottom: 8 }}>
+                    <Tag 
+                      theme={item.method === 'GET' ? 'success' : item.method === 'POST' ? 'primary' : 'warning'}
+                      style={{ marginRight: 8, minWidth: 60, textAlign: 'center' }}
+                    >
+                      {item.method}
+                    </Tag>
+                    <code style={{ background: '#f5f5f5', padding: '2px 8px', borderRadius: 4 }}>
+                      {item.path}
+                    </code>
                   </div>
-                </List.ListItem>
-              )}
-            />
+                  <div>
+                    <strong>{item.summary || '未命名接口'}</strong>
+                  </div>
+                  {item.description && (
+                    <div style={{ color: '#666', fontSize: '14px', marginTop: 4 }}>
+                      {item.description}
+                    </div>
+                  )}
+                  {item.tags && (
+                    <div style={{ marginTop: 8 }}>
+                      {item.tags.split(',').map((tag: string, i: number) => (
+                        <Tag key={i} variant="outline" style={{ marginRight: 4 }}>
+                          {tag.trim()}
+                        </Tag>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
           </div>
         )}
       </Dialog>

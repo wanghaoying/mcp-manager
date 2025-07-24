@@ -122,7 +122,7 @@ go run main.go
 - **语言**: Go 1.23
 - **框架**: Gin Web Framework
 - **API文档**: Swagger/OpenAPI
-- **数据库**: 支持MySQL/PostgreSQL
+- **数据库**: 支持MySQL
 
 ## 📝 待扩展功能
 

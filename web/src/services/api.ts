@@ -22,6 +22,16 @@ api.interceptors.request.use(
 // 响应拦截器
 api.interceptors.response.use(
   (response) => {
+    // 后台API返回格式为 {code, message, data}
+    if (response.data && typeof response.data === 'object' && 'code' in response.data) {
+      if (response.data.code === 0) {
+        // 成功的情况下返回data字段
+        return response.data.data || response.data;
+      } else {
+        // 错误的情况下抛出异常
+        throw new Error(response.data.message || '请求失败');
+      }
+    }
     return response.data;
   },
   (error) => {

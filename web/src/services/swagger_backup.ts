@@ -22,7 +22,7 @@ export const swaggerService = {
       return {
         valid: true,
         message: '校验成功',
-        content: await file.text()
+        content: await file.text() // 从文件直接读取内容
       };
     } catch (error: any) {
       return {
