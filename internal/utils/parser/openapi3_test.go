@@ -6,7 +6,7 @@ import (
 
 func TestSwaggerParser(t *testing.T) {
 	// 创建解析器
-	p := NewSwaggerParser()
+	p := NewOpenAPI3Parser()
 
 	// 测试解析
 	doc, err := p.Parse("/Users/wanghao/Desktop/project/go/mcp-manager/example/test.yaml")

@@ -5,33 +5,19 @@ import (
 	"fmt"
 	"io/ioutil"
 
-	"mcp-manager/internal/model" // 修改为实际的导入路径
-
 	"github.com/getkin/kin-openapi/openapi3"
 )
 
-// SwaggerParser 定义了 Swagger 解析器的接口
-type SwaggerParser interface {
-	// Parse 解析 Swagger 文档
-	Parse(path string) (*openapi3.T, error)
-	// ParseFromData 通过字节数据解析 Swagger 文档
-	ParseFromData(data []byte) (*openapi3.T, error)
-	// Validate 验证 Swagger 文档
-	Validate(doc *openapi3.T) error
-	// ExtractAPIEndpoints 从 openapi3.T 文档中提取所有 APIEndpoint
-	ExtractAPIEndpoints(doc interface{}) []model.APIEndpoint
-}
+// OpenAPI3Parser 定义了 OpenAPI 3.0 解析器的接口实现
+type OpenAPI3Parser struct{}
 
-// DefaultSwaggerParser 是 Swagger 解析器的默认实现
-type DefaultSwaggerParser struct{}
-
-// NewSwaggerParser 创建一个新的 Swagger 解析器
-func NewSwaggerParser() SwaggerParser {
-	return &DefaultSwaggerParser{}
+// NewOpenAPI3Parser 创建一个新的 OpenAPI 3.0 解析器
+func NewOpenAPI3Parser() Parser[*openapi3.T] {
+	return &OpenAPI3Parser{}
 }
 
 // Parse 解析 Swagger 文档
-func (p *DefaultSwaggerParser) Parse(path string) (*openapi3.T, error) {
+func (p *OpenAPI3Parser) Parse(path string) (*openapi3.T, error) {
 	// 读取文件内容
 	data, err := ioutil.ReadFile(path)
 	if err != nil {
@@ -54,7 +40,7 @@ func (p *DefaultSwaggerParser) Parse(path string) (*openapi3.T, error) {
 }
 
 // ParseFromData 通过字节数据解析 Swagger 文档
-func (p *DefaultSwaggerParser) ParseFromData(data []byte) (*openapi3.T, error) {
+func (p *OpenAPI3Parser) ParseFromData(data []byte) (*openapi3.T, error) {
 	loader := openapi3.NewLoader()
 	doc, err := loader.LoadFromData(data)
 	if err != nil {
@@ -67,7 +53,7 @@ func (p *DefaultSwaggerParser) ParseFromData(data []byte) (*openapi3.T, error) {
 }
 
 // Validate 验证 Swagger 文档
-func (p *DefaultSwaggerParser) Validate(doc *openapi3.T) error {
+func (p *OpenAPI3Parser) Validate(doc *openapi3.T) error {
 	// 确保Components对象存在（处理空components情况）
 	if doc.Components == nil {
 		doc.Components = &openapi3.Components{}
@@ -171,25 +157,4 @@ func (p *DefaultSwaggerParser) Validate(doc *openapi3.T) error {
 		doc.Paths = &openapi3.Paths{}
 	}
 	return nil
-}
-
-// ExtractAPIEndpoints 从 openapi3.T 文档中提取所有 APIEndpoint
-func (p *DefaultSwaggerParser) ExtractAPIEndpoints(doc interface{}) []model.APIEndpoint {
-	openapiDoc, ok := doc.(*openapi3.T)
-	if !ok || openapiDoc == nil {
-		return nil
-	}
-	var endpoints []model.APIEndpoint
-	for path, pathItem := range openapiDoc.Paths.Map() {
-		for method, operation := range pathItem.Operations() {
-			endpoints = append(endpoints, model.APIEndpoint{
-				Path:        path,
-				Method:      method,
-				Summary:     operation.Summary,
-				Description: operation.Description,
-				OperationID: operation.OperationID,
-			})
-		}
-	}
-	return endpoints
 }

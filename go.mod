@@ -1,6 +1,8 @@
 module mcp-manager
 
-go 1.23.7
+go 1.23.0
+
+toolchain go1.23.7
 
 require (
 	github.com/facebookgo/grace v0.0.0-20180706040059-75cf19382434

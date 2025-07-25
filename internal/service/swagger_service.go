@@ -1,8 +1,11 @@
+// Package service provides the business logic for handling Swagger/OpenAPI specifications and managing API endpoints.
 package service
 
 import (
 	"context"
 	"fmt"
+	"github.com/getkin/kin-openapi/openapi2"
+	"github.com/getkin/kin-openapi/openapi3"
 	"io"
 	"mcp-manager/internal/dao"
 	"mcp-manager/internal/model"
@@ -13,8 +16,6 @@ import (
 )
 
 // SwaggerService 定义 swagger 解析与 APIEndpoint 管理的业务接口
-// 便于 mock 与扩展
-
 type SwaggerService interface {
 	// ParseAndSave 解析 swagger 内容并保存所有接口到数据库
 	ParseAndSave(ctx context.Context, swaggerContent []byte) ([]model.APIEndpoint, error)
@@ -30,46 +31,64 @@ type SwaggerService interface {
 	TestAPIEndpoint(ctx context.Context, endpoint *model.APIEndpoint, baseURL string) (string, error)
 }
 
-// --- 新增：SwaggerParserWithExtract 接口，扩展 ExtractAPIEndpoints 能力 ---
-type SwaggerParserWithExtract interface {
-	parser.SwaggerParser
-	ExtractAPIEndpoints(doc interface{}) []model.APIEndpoint
-}
-
+// swaggerService 实现 SwaggerService 接口
 type swaggerService struct {
-	parser     parser.SwaggerParser
-	dao        dao.APIEndpointDAO
-	httpClient http.HTTPClient
+	swagger2Parser parser.Parser[*openapi2.T]
+	openapi3Parser parser.Parser[*openapi3.T]
+	dao            dao.APIEndpointDAO
+	httpClient     http.HTTPClient
 }
 
-//
-//func NewSwaggerService(parser parser.SwaggerParser, dao dao.APIEndpointDAO, httpClient utils.HTTPClient) SwaggerService {
-//	return &swaggerService{parser: parser, dao: dao, httpClient: httpClient}
-//}
-
+// NewSwaggerService 创建一个新的 SwaggerService 实例
 func NewSwaggerService() SwaggerService {
 	return &swaggerService{
-		parser:     parser.NewSwaggerParser(),
-		dao:        dao.NewAPIEndpointDAO(nil),
-		httpClient: http.NewHTTPClient(),
+		swagger2Parser: parser.NewSwagger2Parser(),
+		openapi3Parser: parser.NewOpenAPI3Parser(),
+		dao:            dao.NewAPIEndpointDAO(nil),
+		httpClient:     http.NewHTTPClient(),
 	}
 }
 
 // ParseAndSave 解析 swagger 内容并保存所有接口到数据库
 func (s *swaggerService) ParseAndSave(ctx context.Context, swaggerContent []byte) ([]model.APIEndpoint, error) {
-	doc, err := s.parser.ParseFromData(swaggerContent)
-	if err != nil {
-		return nil, err
+	var (
+		endpoints []model.APIEndpoint
+	)
+
+	contentStr := string(swaggerContent)
+	isOpenAPI3 := strings.Contains(contentStr, "openapi") && strings.Contains(contentStr, "3.")
+	isSwagger2 := strings.Contains(contentStr, "swagger") && strings.Contains(contentStr, "2.")
+
+	if isOpenAPI3 {
+		doc, err := s.openapi3Parser.ParseFromData(swaggerContent)
+		if err != nil {
+			return nil, err
+		}
+		if err := s.openapi3Parser.Validate(doc); err != nil {
+			return nil, err
+		}
+		parserWithExtract, ok := s.openapi3Parser.(parser.SwaggerParserWithExtract[*openapi3.T])
+		if !ok {
+			return nil, fmt.Errorf("openapi3Parser does not support ExtractAPIEndpoints")
+		}
+		endpoints = parserWithExtract.ExtractAPIEndpoints(doc)
+	} else if isSwagger2 {
+		doc, err := s.swagger2Parser.ParseFromData(swaggerContent)
+		if err != nil {
+			return nil, err
+		}
+		if err := s.swagger2Parser.Validate(doc); err != nil {
+			return nil, err
+		}
+		parserWithExtract, ok := s.swagger2Parser.(parser.SwaggerParserWithExtract[*openapi2.T])
+		if !ok {
+			return nil, fmt.Errorf("swagger2Parser does not support ExtractAPIEndpoints")
+		}
+		endpoints = parserWithExtract.ExtractAPIEndpoints(doc)
+	} else {
+		return nil, fmt.Errorf("unknown swagger/openapi version")
 	}
-	if err := s.parser.Validate(doc); err != nil {
-		return nil, err
-	}
-	// 断言 parser 是否实现了 ExtractAPIEndpoints
-	parserWithExtract, ok := s.parser.(SwaggerParserWithExtract)
-	if !ok {
-		return nil, fmt.Errorf("parser does not support ExtractAPIEndpoints")
-	}
-	endpoints := parserWithExtract.ExtractAPIEndpoints(doc)
+
 	for i := range endpoints {
 		err := s.dao.Create(ctx, &endpoints[i])
 		if err != nil {

@@ -59,7 +59,7 @@ func ValidateSwaggerByFile(c *gin.Context) {
 		return
 	}
 	parserObj := parser.NewSwaggerParser()
-	loader := parserObj.(*parser.DefaultSwaggerParser)
+	loader := parserObj.(*parser.OpenAPI3Parser)
 	openapiLoader := loader
 	doc, err := openapiLoader.ParseFromData(data)
 	if err != nil {
@@ -90,7 +90,7 @@ func ValidateSwaggerByText(c *gin.Context) {
 		return
 	}
 	parserObj := parser.NewSwaggerParser()
-	loader := parserObj.(*parser.DefaultSwaggerParser)
+	loader := parserObj.(*parser.OpenAPI3Parser)
 	openapiLoader := loader
 	doc, err := openapiLoader.ParseFromData([]byte(req.Content))
 	if err != nil {
